@@ -1,13 +1,21 @@
-FROM python:3.11-slim as seismometer
+FROM python:3.12-slim as seismometer
 
 RUN useradd --create-home --uid 1000 --shell /bin/bash seismo
 ENV PATH=${PATH}:/home/seismo/.local/bin
 
-COPY ./stagefiles /env/
+# split copy to allow more caching of layers 
+#COPY ./stagefiles /env
+COPY ./stagefiles/layer.sh /env/layer.sh
 RUN /bin/sh /env/layer.sh
 
 USER seismo
-RUN pip install --no-cache-dir -r /env/python/requirements.txt
+
+COPY ./stagefiles/python /env/python
+RUN pip install --no-cache-dir -c /env/python/constraints.txt -r /env/python/requirements.txt
+RUN pip install --no-cache-dir -c /env/python/constraints.txt -r /env/python/requirements-dev.txt 
+
+COPY ./stagefiles/audit_install.sh /env/audit_install.sh
+RUN /bin/sh /env/audit_install.sh
 
 # https://github.com/opencontainers/image-spec/blob/main/annotations.md
 LABEL \
