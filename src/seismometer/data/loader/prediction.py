@@ -116,7 +116,11 @@ def dictionary_types(config: ConfigProvider, dataframe: pd.DataFrame) -> pd.Data
         )
 
     # Default to assumed types
-    dataframe[unspecified_columns] = assumed_types(config, dataframe[unspecified_columns])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", pd.errors.SettingWithCopyWarning)
+        # We must use [] assignment because .loc upcasts and won't always change dtypes...
+        # This becomes unneeded in pandas v3
+        dataframe[unspecified_columns] = assumed_types(config, dataframe[unspecified_columns])
     return dataframe
 
 
@@ -168,8 +172,8 @@ def _infer_datetime(dataframe, cols=None, override_categories=None):
     """Infers datetime columns based on column name and casts to pandas.datatime."""
     if cols is None:
         cols = dataframe.columns
-    for col in cols:
-        if "Time" in col:
-            dataframe[col] = pd.to_datetime(dataframe[col])
-            continue
+        for col in cols:
+            if "Time" in col:
+                dataframe[col] = pd.to_datetime(dataframe[col])
+                continue
     return dataframe

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from sklearn import metrics
+from sklearn.exceptions import UndefinedMetricWarning
 
 from seismometer.data.confidence import (
     PerformanceMetricConfidenceParam,
@@ -30,10 +31,13 @@ class Test_SJR:
     def test_allfalse_alltrue(self):
         proba = np.random.rand(100000)
         truth = np.zeros(proba.shape)
-        _, tpr, _, region = simultaneous_joint_confidence(ROCConfidenceParam(0.95), truth, proba)
+        with pytest.warns(UndefinedMetricWarning):
+            _, tpr, _, region = simultaneous_joint_confidence(ROCConfidenceParam(0.95), truth, proba)
         assert pd.isna(tpr).all() and pd.isna(region.lower_tpr).all() and pd.isna(region.upper_tpr).all()
         truth = np.ones(proba.shape)
-        _, _, fpr, region = simultaneous_joint_confidence(ROCConfidenceParam(0.95), truth, proba)
+
+        with pytest.warns(UndefinedMetricWarning):
+            _, _, fpr, region = simultaneous_joint_confidence(ROCConfidenceParam(0.95), truth, proba)
         assert pd.isna(fpr).all() and pd.isna(region.lower_fpr).all() and pd.isna(region.upper_fpr).all()
 
 
